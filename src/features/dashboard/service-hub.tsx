@@ -13,6 +13,10 @@ import { ServiceMark, StatusPill, type ServiceStatus } from '@/components/brand/
  */
 export interface Tile {
   label: string;
+  /** One line on what the service does. */
+  desc?: string;
+  /** Two or three things you do there, shown as tags. */
+  points?: string[];
   img: string;
   logo?: boolean;
   href?: string;
@@ -30,8 +34,14 @@ export const statusOf = (t: Tile): ServiceStatus => (t.off ? 'off' : t.href || t
  */
 export type Accent = 'navy' | 'gold' | 'bronze' | 'royal';
 
-const ACCENTS: Record<Accent, { bar: string; chip: string; halo: string; tile: string; hover: string; wash: string; mark: string; label: string; arrow: string }> = {
+const ACCENTS: Record<
+  Accent,
+  { bar: string; chip: string; halo: string; tile: string; hover: string; wash: string; mark: string; label: string; arrow: string; tag: string; cta: string; rings: string }
+> = {
   navy: {
+    tag: 'bg-brand-50 text-brand-700 ring-brand-100',
+    cta: 'bg-brand-700 group-hover:bg-brand-800',
+    rings: 'border-brand-200/70',
     bar: 'from-brand-500 via-brand-700 to-brand-900',
     chip: 'from-brand-600 to-brand-900 shadow-[0_10px_20px_-10px_rgb(2_44_113/0.9)]',
     halo: 'bg-brand-200/50',
@@ -43,6 +53,9 @@ const ACCENTS: Record<Accent, { bar: string; chip: string; halo: string; tile: s
     arrow: 'text-brand-700',
   },
   gold: {
+    tag: 'bg-gold-50 text-gold-700 ring-gold-200',
+    cta: 'bg-gold-600 group-hover:bg-gold-700',
+    rings: 'border-gold-200/80',
     bar: 'from-gold-300 via-gold-500 to-gold-700',
     chip: 'from-gold-400 to-gold-600 shadow-[0_10px_20px_-10px_rgb(183_127_55/0.95)]',
     halo: 'bg-gold-200/60',
@@ -54,6 +67,9 @@ const ACCENTS: Record<Accent, { bar: string; chip: string; halo: string; tile: s
     arrow: 'text-gold-600',
   },
   bronze: {
+    tag: 'bg-gold-50 text-gold-800 ring-gold-200',
+    cta: 'bg-gold-700 group-hover:bg-gold-800',
+    rings: 'border-gold-300/60',
     bar: 'from-gold-400 via-gold-600 to-gold-800',
     chip: 'from-gold-500 to-gold-800 shadow-[0_10px_20px_-10px_rgb(119_81_31/0.95)]',
     halo: 'bg-gold-200/50',
@@ -65,6 +81,9 @@ const ACCENTS: Record<Accent, { bar: string; chip: string; halo: string; tile: s
     arrow: 'text-gold-700',
   },
   royal: {
+    tag: 'bg-brand-50 text-brand-600 ring-brand-100',
+    cta: 'bg-brand-500 group-hover:bg-brand-600',
+    rings: 'border-brand-200/70',
     bar: 'from-brand-300 via-brand-500 to-brand-700',
     chip: 'from-brand-400 to-brand-600 shadow-[0_10px_20px_-10px_rgb(47_91_191/0.95)]',
     halo: 'bg-brand-100/80',
@@ -82,7 +101,7 @@ function ServiceTile({ tile, accent, onSoon }: { tile: Tile; accent: Accent; onS
   const a = ACCENTS[accent];
   const off = status === 'off';
   const cls = cn(
-    'group relative isolate flex min-h-36 min-w-0 flex-col items-center justify-center gap-[clamp(0.5rem,1.4vh,0.9rem)] overflow-hidden rounded-2xl border bg-gradient-to-br px-3 py-4 text-center outline-none xl:min-h-0',
+    'group relative isolate flex min-h-52 min-w-0 flex-col overflow-hidden rounded-2xl border bg-gradient-to-br p-[clamp(0.9rem,2.2vh,1.4rem)] text-left outline-none xl:min-h-0',
     'transition-[transform,box-shadow,border-color] duration-300 ease-out',
     'focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
     a.tile,
@@ -105,30 +124,80 @@ function ServiceTile({ tile, accent, onSoon }: { tile: Tile; accent: Accent; onS
         aria-hidden
       />
 
-      <StatusPill status={status} className="absolute top-2.5 right-2.5" />
-      {tile.instant && !off && (
-        <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 px-1.5 py-0.5 text-[10px] leading-none font-bold tracking-wider text-white uppercase shadow-sm">
-          <Zap className="size-2.5 fill-current group-hover:animate-pulse" /> Instant
+      {/* Quiet rings in the corner, so a tall tile never looks empty; they widen on hover. */}
+      <span className="pointer-events-none absolute -right-[18%] -bottom-[18%] -z-10 size-[clamp(14rem,42vh,30rem)]" aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className={cn('absolute inset-0 rounded-full border transition-transform duration-700 ease-out group-hover:scale-110 motion-reduce:transition-none', a.rings)}
+            style={{ transform: `scale(${1 - i * 0.24})` }}
+          />
+        ))}
+      </span>
+
+      {/* Corner badges: the state only when it isn't simply live (the group already says that). */}
+      <span className="absolute top-[clamp(0.9rem,2.2vh,1.4rem)] right-[clamp(0.9rem,2.2vh,1.4rem)] flex flex-col items-end gap-1.5">
+        {status !== 'live' && <StatusPill status={status} />}
+        {tile.instant && !off && (
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 px-2 py-1 text-[10px] leading-none font-bold tracking-wider text-white uppercase shadow-sm">
+            <Zap className="size-2.5 fill-current group-hover:animate-pulse" /> Instant
+          </span>
+        )}
+      </span>
+
+      {/* The mark, what it is and what you do there — centred in the space, larger on taller screens. */}
+      <span className="flex min-w-0 flex-1 flex-col justify-center">
+        <ServiceMark
+          src={tile.img}
+          logo={tile.logo}
+          muted={off}
+          className={cn(
+            'h-[clamp(2.75rem,8.5vh,5.75rem)] origin-bottom-left transition duration-500 ease-[cubic-bezier(.34,1.56,.64,1)] motion-reduce:transition-none',
+            tile.logo ? 'w-[clamp(5rem,15vh,10rem)]' : 'w-[clamp(2.75rem,8.5vh,5.75rem)]',
+            !off && 'group-hover:-translate-y-0.5 group-hover:scale-105 group-hover:-rotate-2 motion-reduce:group-hover:transform-none',
+            a.mark,
+          )}
+        />
+        <span
+          className={cn(
+            'mt-[clamp(0.75rem,2.6vh,1.75rem)] block text-[clamp(1rem,2.3vh,1.55rem)] leading-tight font-extrabold tracking-tight text-ink-900 transition-colors duration-300',
+            !off && a.label,
+          )}
+        >
+          {tile.label}
+        </span>
+        {/* Always two lines tall, so every tile's mark and title sit at the same height. */}
+        {tile.desc && (
+          <span className="mt-[clamp(0.25rem,0.8vh,0.5rem)] line-clamp-2 min-h-[2lh] text-[clamp(12.5px,1.4vh,14px)] leading-snug text-slate-500" title={tile.desc}>
+            {tile.desc}
+          </span>
+        )}
+      </span>
+
+      {/* Bottom: what you do there, then the way in. */}
+      {tile.points && tile.points.length > 0 && (
+        <span className="mt-[clamp(0.75rem,2vh,1.25rem)] flex flex-wrap content-end gap-1.5 sm:min-h-[3.6rem]">
+          {tile.points.map((p) => (
+            <span key={p} className={cn('rounded-full bg-white/70 px-2.5 py-0.5 text-[clamp(11px,1.2vh,12.5px)] font-semibold ring-1 backdrop-blur-sm', a.tag)}>
+              {p}
+            </span>
+          ))}
         </span>
       )}
-
-      <ServiceMark
-        src={tile.img}
-        logo={tile.logo}
-        muted={off}
-        className={cn(
-          'transition duration-500 ease-[cubic-bezier(.34,1.56,.64,1)] motion-reduce:transition-none',
-          !off && 'group-hover:-translate-y-0.5 group-hover:scale-110 group-hover:-rotate-3 motion-reduce:group-hover:transform-none',
-          a.mark,
-        )}
-      />
-      <span className={cn('text-[13.5px] leading-tight font-bold text-balance text-ink-900 transition-colors duration-300', !off && a.label)}>
-        {tile.label}
-        {status === 'live' && (
-          <ArrowRight
-            className={cn('ml-0 inline-block h-3.5 w-0 align-[-2px] opacity-0 transition-all duration-300 group-hover:ml-1 group-hover:w-3.5 group-hover:opacity-100', a.arrow)}
+      <span className="mt-[clamp(0.6rem,1.6vh,1rem)] flex items-center justify-between gap-2 border-t border-slate-900/6 pt-[clamp(0.6rem,1.6vh,1rem)]">
+        <span className="text-[12px] font-semibold text-slate-400 transition-colors duration-300 group-hover:text-slate-600">
+          {off ? 'Switched off' : status === 'live' ? `Open ${tile.label}` : 'Coming soon'}
+        </span>
+        {!off && (
+          <span
+            className={cn(
+              'grid size-9 shrink-0 place-items-center rounded-full text-white shadow-md transition-all duration-300 group-hover:translate-x-0.5 group-hover:shadow-lg motion-reduce:transition-none',
+              a.cta,
+            )}
             aria-hidden
-          />
+          >
+            <ArrowRight className="size-4 transition-transform duration-300 group-hover:-rotate-45" />
+          </span>
         )}
       </span>
     </>
@@ -193,15 +262,19 @@ export function HubCard({
         <span className={cn('grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white', a.chip)}>
           <Icon className="size-4.5" />
         </span>
-        <div className="min-w-0">
-          <h2 className="truncate text-[15px] leading-tight font-extrabold tracking-tight text-ink-900">{title}</h2>
-          <p className="truncate text-[12px] text-slate-500">{caption}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="truncate text-[15px] leading-tight font-extrabold tracking-tight text-ink-900">{title}</h2>
+            <span className="shrink-0">{disabled ? <StatusPill status="off" /> : anyLive ? <StatusPill status="live" /> : <StatusPill status="soon" />}</span>
+          </div>
+          <p className="truncate text-[12px] text-slate-500" title={caption}>
+            {caption}
+          </p>
         </div>
-        <span className="ml-auto shrink-0">{disabled ? <StatusPill status="off" /> : anyLive ? <StatusPill status="live" /> : <StatusPill status="soon" />}</span>
       </header>
-      <div className={cn('grid min-h-0 flex-1 gap-3 px-3.5 pb-3.5 max-sm:grid-cols-2', COLS[n])}>
-        {tiles.map((t, i) => (
-          <div key={t.label} className={cn('flex min-h-0 [&>*]:flex-1', ((n === 3 && i === 2) || n === 1) && 'max-sm:col-span-2')}>
+      <div className={cn('grid min-h-0 flex-1 gap-3 px-3.5 pb-3.5 max-sm:grid-cols-1', COLS[n])}>
+        {tiles.map((t) => (
+          <div key={t.label} className="flex min-h-0 *:flex-1">
             <ServiceTile tile={t} accent={accent} onSoon={onSoon} />
           </div>
         ))}

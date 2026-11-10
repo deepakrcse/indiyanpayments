@@ -76,22 +76,48 @@ export function HomeView() {
   const name = (user.fullName || user.username).trim().split(/\s+/)[0];
   const payOutOff = features.payOutDisabled;
 
-  const payIn: Tile[] = [{ label: 'Card PG', img: icon('card'), href: routes.gateway }];
+  const payIn: Tile[] = [
+    {
+      label: 'Card PG',
+      desc: 'Collect card payments straight into your wallet.',
+      points: ['Payment link', 'Live status', 'Saved payers'],
+      img: icon('card'),
+      href: routes.gateway,
+    },
+  ];
   const payOut: Tile[] = [
-    { label: 'IMPS', img: logo('imps.svg'), logo: true, href: routes.imps, off: payOutOff },
-    { label: 'Card Payments', img: logo('bharat-billpay.svg'), logo: true, href: routes.cardBills, off: payOutOff, instant: true },
+    {
+      label: 'IMPS',
+      desc: 'Send money to any bank account in seconds.',
+      points: ['Saved accounts', 'Account check', 'Receipt'],
+      img: logo('imps.svg'),
+      logo: true,
+      href: routes.imps,
+      off: payOutOff,
+    },
+    {
+      label: 'Card Payments',
+      desc: 'Pay credit card bills through Bharat BillPay.',
+      points: ['Fetch bill', 'Pay from wallet'],
+      img: logo('bharat-billpay.svg'),
+      logo: true,
+      href: routes.cardBills,
+      off: payOutOff,
+      instant: true,
+    },
   ];
   const more: Tile[] = [
-    { label: 'Reports', img: icon('bar-chart'), href: routes.reports },
-    ...(isDistributor ? [{ label: 'Retailers', img: icon('store'), href: routes.myRetailers }] : []),
-    ...(isAdmin ? [{ label: 'Admin', img: icon('gear'), href: routes.admin }] : []),
+    { label: 'Reports', desc: 'Transfers, card collections, bills and your ledger.', points: ['Filter by date', 'Export'], img: icon('bar-chart'), href: routes.reports },
+    ...(isDistributor ? [{ label: 'Retailers', desc: 'Retailers mapped to you and your commission.', points: ['Commission', 'Search'], img: icon('store'), href: routes.myRetailers }] : []),
+    ...(isAdmin ? [{ label: 'Admin', desc: 'Customers, distributors and platform settings.', points: ['Customers', 'PG settings', 'Admin reports'], img: icon('gear'), href: routes.admin }] : []),
   ];
 
   return (
-    // Columns in tile units: Pay In 1 + Pay Out 2 + More (1 or 2).
-    <div className={cn('grid grid-cols-1 gap-4 xl:h-[calc(100dvh-var(--chrome-h))] xl:grid-rows-[auto_minmax(0,1fr)]', more.length > 1 ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
+    // Desktop (xl): one row, in tile units — Pay In 1 + Pay Out 2 + More (1 or 2). Tablet / small laptop
+    // (md–lg): Pay In and Pay Out share a row and More takes the next. Phone: one column.
+    <div className={cn('grid grid-cols-1 gap-4 xl:h-[calc(100dvh-var(--chrome-h))] xl:grid-rows-[auto_minmax(0,1fr)]', 'md:grid-cols-3', more.length > 1 ? 'xl:grid-cols-5' : 'xl:grid-cols-4')}>
       {/* ── Greeting: name, store and today's date; for admins, the business numbers ── */}
-      <section className="bg-aurora relative flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-3xl px-6 py-4 text-white shadow-lift lg:col-span-full">
+      <section className="bg-aurora relative flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-3xl px-6 py-4 text-white shadow-lift md:col-span-full">
         <div className="pointer-events-none absolute -top-20 right-1/3 size-56 animate-drift rounded-full bg-gold-500/20 blur-3xl" aria-hidden />
         <div className="relative min-w-0">
           <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
@@ -112,9 +138,9 @@ export function HomeView() {
         )}
       </section>
 
-      <HubCard title="Pay In" caption="Accept payments from your customers" icon={ArrowDownToLine} accent="navy" tiles={payIn} onSoon={setSoon} className="lg:col-span-1" />
-      <HubCard title="Pay Out" caption="Send money to bank accounts and pay card bills" icon={ArrowUpFromLine} accent="bronze" tiles={payOut} disabled={payOutOff} onSoon={setSoon} className="lg:col-span-2" />
-      <HubCard title="More" caption="Manage and monitor" icon={LayoutGrid} accent="royal" tiles={more} onSoon={setSoon} className={more.length > 1 ? 'lg:col-span-2' : 'lg:col-span-1'} />
+      <HubCard title="Pay In" caption="Collect payments" icon={ArrowDownToLine} accent="navy" tiles={payIn} onSoon={setSoon} className="md:col-span-1" />
+      <HubCard title="Pay Out" caption="Send money to bank accounts and pay card bills" icon={ArrowUpFromLine} accent="bronze" tiles={payOut} disabled={payOutOff} onSoon={setSoon} className="md:col-span-2" />
+      <HubCard title="More" caption="Manage and monitor" icon={LayoutGrid} accent="royal" tiles={more} onSoon={setSoon} className={cn('md:col-span-full', more.length > 1 ? 'xl:col-span-2' : 'xl:col-span-1')} />
 
       <Dialog open={Boolean(soon)} onClose={() => setSoon(null)} title={soon ?? ''} size="sm" icon={<Sparkles />}>
         <p className="text-[13.5px] leading-relaxed text-slate-600">This service isn&apos;t live yet — there&apos;s no provider connected for it. It&apos;s listed so the full catalogue is visible.</p>
