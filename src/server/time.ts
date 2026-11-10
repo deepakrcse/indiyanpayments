@@ -41,3 +41,21 @@ export function nextMidnight(timeZone = env().APP_TIMEZONE): Date {
   const midnightAsUtc = Date.UTC(p.year, p.month - 1, p.day + 1, 0, 0, 0);
   return new Date(midnightAsUtc - offsetMs(timeZone, now));
 }
+
+/** "YYYY-MM-DD" in the portal's time zone for an instant (or `daysAway` from it). */
+export function isoDateAt(at: number, daysAway = 0, timeZone = env().APP_TIMEZONE): string {
+  const p = partsIn(timeZone, new Date(at));
+  return new Date(Date.UTC(p.year, p.month - 1, p.day + daysAway)).toISOString().slice(0, 10);
+}
+
+/**
+ * The instant for a zone-local timestamp with no offset ("2026-11-10T12:53:07.13"), the way the
+ * payments service writes its times. Null when it cannot be read.
+ */
+export function zoneLocalToEpoch(local: string | null | undefined, timeZone = env().APP_TIMEZONE): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?/.exec(local ?? '');
+  if (!m) return null;
+  const ms = m[7] ? Math.round(Number(`0.${m[7]}`) * 1000) : 0;
+  const naive = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6], ms);
+  return naive - offsetMs(timeZone, new Date(naive));
+}

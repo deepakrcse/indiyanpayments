@@ -1,12 +1,12 @@
 import 'server-only';
-import { randomBytes } from 'node:crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { env, masterClientId } from '@/server/config/env';
 import { cache, HOUR } from '@/server/cache/memory-cache';
 import { badGateway, badRequest, notFound } from '@/server/http/errors';
 import { fields, rowsOf } from '@/server/http/fields';
 import { remotePost } from '@/server/http/remote-api';
 import { toPaymentLink, toPgTransfer, toWalletGateway } from '@/server/mappers/pg.mapper';
-import { isoDateInZone } from '@/server/time';
+import { isoDateAt, isoDateInZone, zoneLocalToEpoch } from '@/server/time';
 import { PATTERNS } from '@/lib/validation/patterns';
 import type { SessionUser } from '@/types/auth';
 import type { PaymentLink, PaymentLinkInput, PaymentStatus, PgTransfer, WalletGateway } from '@/types/pg';
@@ -24,12 +24,72 @@ export async function gatewaysForWallet(walletId: number): Promise<WalletGateway
 const tokenKey = (token: string) => `pg-return:${token}`;
 
 /**
+ * What the return link carries: the wallet, amount, card's last four digits and the moment the
+ * link was made. Signed with the server secret, so it cannot be forged or edited. It lets ANY
+ * server instance find the payment again — Vercel runs many, and memory is not shared between
+ * them or kept across deploys, which is why a memory-only lookup answered "This link has expired".
+ */
+interface ReturnClaim {
+  w: number;
+  a: number;
+  c: string;
+  t: number;
+  n: string;
+}
+
+const sign = (body: string) => createHmac('sha256', env().SESSION_SECRET).update(`pg-return.${body}`).digest('base64url').slice(0, 24);
+
+function returnToken(claim: ReturnClaim): string {
+  const body = Buffer.from(JSON.stringify(claim)).toString('base64url');
+  return `${body}.${sign(body)}`;
+}
+
+function readReturnToken(token: string): ReturnClaim | null {
+  const [body, mac] = token.split('.');
+  if (!body || !mac) return null;
+  const expected = Buffer.from(sign(body));
+  const given = Buffer.from(mac);
+  if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+  try {
+    const c = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) as ReturnClaim;
+    return Number.isFinite(c.w) && Number.isFinite(c.a) && typeof c.c === 'string' && Number.isFinite(c.t) ? c : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The link the claim describes: same wallet, amount and card digits, created within moments of
+ * the claim (the link is made right after the token). The closest one wins.
+ */
+async function referenceFromClaim(claim: ReturnClaim): Promise<string | null> {
+  const result = await remotePost('pg/TransferReport', {
+    client_ID: masterClientId(),
+    walletId: claim.w,
+    fromDate: isoDateAt(claim.t, -1),
+    toDate: isoDateAt(claim.t, 1),
+  });
+  if (!result.ok) return null;
+  let best: { ref: string; gap: number } | null = null;
+  for (const row of rowsOf(result.data).map((r) => toPgTransfer(r, false))) {
+    const at = zoneLocalToEpoch(row.createdTime);
+    if (!row.pipeRefNumber || at == null) continue;
+    if (row.walletId !== claim.w || Math.abs(row.amount - claim.a) > 0.005) continue;
+    if (!(row.cardNumber ?? '').endsWith(claim.c)) continue;
+    const gap = at - claim.t;
+    if (gap < -5 * 60_000 || gap > 30 * 60_000) continue;
+    if (!best || Math.abs(gap) < best.gap) best = { ref: row.pipeRefNumber, gap: Math.abs(gap) };
+  }
+  return best?.ref ?? null;
+}
+
+/**
  * Generates a payment link. The reference does not exist until the link does, so it cannot go
  * in the redirect URL: a random token goes in instead, tied to the reference once issued. The
  * payer returns to the wallet page, which shows this payment's result.
  */
 export async function generatePaymentLink(walletId: number, input: PaymentLinkInput, requestOrigin: string): Promise<PaymentLink> {
-  const token = randomBytes(16).toString('hex');
+  const token = returnToken({ w: walletId, a: input.amount, c: input.cardLast4, t: Date.now(), n: randomBytes(4).toString('hex') });
   const base = env().PG_REDIRECT_BASE_URL || requestOrigin;
 
   const result = await remotePost('pg/GenerateLink', {
@@ -39,7 +99,7 @@ export async function generatePaymentLink(walletId: number, input: PaymentLinkIn
     custName: input.customerName,
     card_last_4_digit: input.cardLast4,
     amount: input.amount,
-    redirectURL: `${base}/wallet?t=${token}`,
+    redirectURL: `${base}/wallet?t=${encodeURIComponent(token)}`,
   });
   if (!result.ok) throw badGateway(result.message, 'The payment link could not be generated.');
 
@@ -68,8 +128,15 @@ const FAILED_STATES = new Set(['FAILED', 'FAILURE', 'DECLINED', 'CANCELLED', 'CA
 export async function paymentStatus(args: { referenceId?: string | null; token?: string | null }, viewer: SessionUser | null): Promise<PaymentStatus> {
   let reference = args.referenceId?.trim() ?? '';
   if (!reference && args.token) {
-    const fromToken = cache.get<string>(tokenKey(args.token.trim()));
-    if (!fromToken) throw notFound('This link has expired. Enter your reference number to check the payment.');
+    const token = args.token.trim();
+    // Fast path: this instance made the link. Otherwise the signed link itself says which payment it is.
+    let fromToken = cache.get<string>(tokenKey(token)) ?? null;
+    if (!fromToken) {
+      const claim = readReturnToken(token);
+      fromToken = claim ? await referenceFromClaim(claim) : null;
+      if (fromToken) cache.set(tokenKey(token), fromToken, 24 * HOUR);
+    }
+    if (!fromToken) throw notFound("We couldn't match this payment automatically. Enter its reference number to check it.");
     reference = fromToken;
   }
   if (!PATTERNS.reference.test(reference)) throw badRequest('Enter a valid reference number.');
