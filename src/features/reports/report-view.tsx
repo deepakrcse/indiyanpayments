@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Download, FileSpreadsheet, FileText, Printer, Search, Share2, Undo2, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api/client';
+import { cn } from '@/lib/cn';
 import { qk } from '@/lib/api/query-keys';
 import { todayIso } from '@/lib/dates';
 import { plural } from '@/lib/format';
@@ -33,6 +34,11 @@ import { RefundDialog } from './refund-dialog';
 import type { ReportDefinition, ReportParams } from './types';
 
 type Row = Record<string, unknown>;
+
+// The table fits its card instead of scrolling sideways: headers may wrap ("Partner / charges"),
+// cells sit closer together, and text wraps where it has spaces; amounts never break.
+const TH_FIT = 'px-2 2xl:px-3 align-bottom leading-tight whitespace-normal first:pl-4 last:pr-4';
+const TD_FIT = 'px-2 2xl:px-3 text-[12.5px] first:pl-4 last:pr-4';
 
 /** Whole local days, from 00:00 of the first to just before the day after the last. */
 function inRange(iso: string | null, from: string, to: string) {
@@ -178,8 +184,12 @@ export function ReportView({ reportKey }: { reportKey: string }) {
   const statusCol = screenCols.find((c) => c.header === 'Status');
   const timeCol = screenCols.find((c) => c.header === 'Time' || c.header === 'Date');
   const restCols = screenCols.filter((c) => c !== idCol && c !== statusCol && c !== timeCol);
+  // A report with many columns can't fit a laptop screen as a table without becoming unreadable,
+  // so it stays as cards (two a row) until the screen is wide enough; a narrower one is a table
+  // from a tablet up.
+  const wide = screenCols.length + (def.receipt ? 1 : 0) + (def.refundable ? 1 : 0) + (showRefresh ? 1 : 0) > 9;
   const cards = (list: Row[]) => (
-    <ul className="space-y-3 bg-slate-50/70 p-3 md:hidden">
+    <ul className={cn('grid gap-3 bg-slate-50/70 p-3 md:grid-cols-2', wide ? 'xl:hidden' : 'md:hidden')}>
       {list.map((r, i) => {
         const pendingHere = showRefresh && def.pending!.isPending(r);
         const hasActions = Boolean(def.receipt || def.refundable || pendingHere);
@@ -222,26 +232,50 @@ export function ReportView({ reportKey }: { reportKey: string }) {
       <THead>
         <tr>
           {screenCols.map((c) => (
-            <TH key={c.header} align={c.align}>
+            <TH key={c.header} align={c.align} className={TH_FIT}>
               {c.header}
             </TH>
           ))}
-          {def.receipt && <TH align="right">Receipt</TH>}
-          {def.refundable && <TH align="right">More</TH>}
-          {showRefresh && <TH align="center">Re-check</TH>}
+          {def.receipt && (
+            <TH align="right" className={TH_FIT}>
+              Receipt
+            </TH>
+          )}
+          {def.refundable && (
+            <TH align="right" className={TH_FIT}>
+              More
+            </TH>
+          )}
+          {showRefresh && (
+            <TH align="center" className={TH_FIT}>
+              Re-check
+            </TH>
+          )}
         </tr>
       </THead>
       <tbody>
         {list.map((r, i) => (
           <TR key={def.rowKey(r, i)}>
             {screenCols.map((c) => (
-              <TD key={c.header} align={c.align} className="whitespace-nowrap">
+              <TD key={c.header} align={c.align} className={cn(TD_FIT, c.align === 'right' && 'whitespace-nowrap')}>
                 {cellOf(c, r)}
               </TD>
             ))}
-            {def.receipt && <TD align="right">{receiptButtons(r)}</TD>}
-            {def.refundable && <TD align="right">{refundMenu(r)}</TD>}
-            {showRefresh && <TD align="center">{recheckButton(r)}</TD>}
+            {def.receipt && (
+              <TD align="right" className={TD_FIT}>
+                {receiptButtons(r)}
+              </TD>
+            )}
+            {def.refundable && (
+              <TD align="right" className={TD_FIT}>
+                {refundMenu(r)}
+              </TD>
+            )}
+            {showRefresh && (
+              <TD align="center" className={TD_FIT}>
+                {recheckButton(r)}
+              </TD>
+            )}
           </TR>
         ))}
       </tbody>
@@ -252,7 +286,7 @@ export function ReportView({ reportKey }: { reportKey: string }) {
   const table = (list: Row[]) => (
     <>
       {cards(list)}
-      <div className="max-md:hidden">{wideTable(list)}</div>
+      <div className={wide ? 'max-xl:hidden' : 'max-md:hidden'}>{wideTable(list)}</div>
     </>
   );
 

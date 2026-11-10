@@ -1,7 +1,7 @@
 import { ArrowLeftRight, BookOpen, CreditCard, QrCode, Receipt, Users, WalletCards } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { cn } from '@/lib/cn';
-import { dateTime, dayMonthYear, rupees } from '@/lib/format';
+import { dateOnly, dateTime, dayMonthYear, rupees, timeOnly } from '@/lib/format';
 import { StatusBadge } from '@/components/ui/badge';
 import { Stacked } from '@/components/ui/table';
 import { qrRemarkParts, qrRemarkText } from '@/features/qr/remarks';
@@ -19,7 +19,17 @@ const money = (n: number | null | undefined) => (n == null ? '' : Number(n).toFi
 
 // ── Shared column builders ────────────────────────────────────────────────
 const idCol = <R,>(get: (r: R) => number | null): ReportColumn<R> => ({ header: 'ID', value: (r) => get(r) ?? '', cell: (r) => <span className="font-semibold text-ink-900 tabular">#{get(r) ?? '—'}</span>, width: 0.45 });
-const timeCol = <R,>(get: (r: R) => string | null): ReportColumn<R> => ({ header: 'Time', value: (r) => get(r) ?? '', cell: (r) => <span className="whitespace-nowrap">{dateTime(get(r))}</span>, width: 1.3 });
+/** Date over time, so a time column is half as wide on screen: "10 Nov 2026" / "01:49 pm". */
+const When = ({ iso }: { iso: string | null | undefined }) =>
+  iso ? (
+    <span className="block leading-tight whitespace-nowrap">
+      {dateOnly(iso)}
+      <span className="mt-0.5 block text-[11.5px] text-slate-500">{timeOnly(iso)}</span>
+    </span>
+  ) : (
+    '—'
+  );
+const timeCol = <R,>(get: (r: R) => string | null): ReportColumn<R> => ({ header: 'Time', value: (r) => get(r) ?? '', cell: (r) => <When iso={get(r)} />, width: 1.3 });
 const statusCol = <R,>(get: (r: R) => string | null): ReportColumn<R> => ({ header: 'Status', value: (r) => get(r) ?? '', cell: (r) => <StatusBadge status={get(r)} />, width: 0.8 });
 const amountCol = <R,>(header: string, get: (r: R) => number | null, strong = false): ReportColumn<R> => ({
   header,
@@ -119,7 +129,7 @@ function pgColumns(withMargins: boolean): ReportColumn<PgTransfer>[] {
     { header: 'Retailer', value: (r) => r.retailerName, cell: (r) => <Stacked primary={r.retailerName} secondary={r.retailerMobile} />, width: 1.1 },
     { header: 'Retailer mobile', value: (r) => r.retailerMobile, only: 'export', width: 1 },
     { header: 'Customer', value: (r) => r.payerName, width: 1.1 },
-    { header: 'Card', value: (r) => r.cardNumber, cell: (r) => <span className="font-mono">•••• {r.cardNumber}</span>, width: 0.7 },
+    { header: 'Card', value: (r) => r.cardNumber, cell: (r) => <span className="font-mono whitespace-nowrap">•••• {r.cardNumber}</span>, width: 0.7 },
     amountCol('Amount', (r) => r.amount, true),
     amountCol('Charges', (r) => r.charges),
     ...(withMargins
@@ -129,7 +139,7 @@ function pgColumns(withMargins: boolean): ReportColumn<PgTransfer>[] {
         ]
       : []),
     statusCol((r) => r.status),
-    { header: 'Credited', value: (r) => (r.walletCreditedTime ? dateTime(r.walletCreditedTime) : ''), cell: (r) => (r.walletCreditedTime ? dateTime(r.walletCreditedTime) : '—'), width: 1.3 },
+    { header: 'Credited', value: (r) => (r.walletCreditedTime ? dateTime(r.walletCreditedTime) : ''), cell: (r) => <When iso={r.walletCreditedTime} />, width: 1.3 },
     amountCol('Closing balance', (r) => r.walletClosingBalance),
   ];
 }
