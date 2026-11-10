@@ -1,4 +1,4 @@
-# Indiyan Payments — API reference
+# Indiyana Payments — API reference
 
 All routes live under `/api` (Next.js Route Handlers in `src/app/api`). Requests and responses are JSON.
 

@@ -93,7 +93,7 @@ export function Topbar() {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-18 w-full max-w-400 items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <Link href={routes.home} onClick={markTopLevel} className="shrink-0" aria-label="Indiyan Payments — dashboard">
+        <Link href={routes.home} onClick={markTopLevel} className="shrink-0" aria-label="Indiyana Payments — dashboard">
           <BrandMark size={36} className="sm:hidden" priority />
           <BrandLogo height={46} className="max-sm:hidden" priority />
         </Link>

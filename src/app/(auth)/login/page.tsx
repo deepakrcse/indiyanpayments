@@ -1,25 +1,24 @@
 import type { Metadata } from 'next';
 import { Lock } from 'lucide-react';
 import { BrandLogo } from '@/components/brand/brand-logo';
+import { LoginBackdrop } from '@/features/auth/login-backdrop';
 import { LoginForm } from '@/features/auth/login-form';
 import { site } from '@/config/site';
 
 export const metadata: Metadata = { title: 'Sign in' };
 
-/** One card in the middle of the screen: the logo, the form, and nothing else to read. */
+/** One card in the middle of the screen — the logo and the form — framed by abstract brand shapes. */
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
   return (
     <div className="canvas-grid relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-10">
-      {/* The logo's two colours, softly, behind the card. */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 size-[36rem] -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl" aria-hidden />
-      <div className="pointer-events-none absolute -right-24 -bottom-32 size-80 rounded-full bg-gold-100/70 blur-3xl" aria-hidden />
+      <LoginBackdrop />
 
       <main className="relative w-full max-w-[420px]">
         <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-lift">
           <div className="h-1 bg-gradient-to-r from-brand-700 via-brand-600 to-gold-500" aria-hidden />
           <div className="px-7 pt-8 pb-7 sm:px-9">
-            <div className="flex justify-center">
+            <div className="flex animate-rise justify-center">
               <BrandLogo height={64} priority />
             </div>
             <h1 className="mt-6 text-center text-[22px] font-extrabold tracking-tight text-ink-900">Sign in to your counter</h1>

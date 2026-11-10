@@ -2,7 +2,7 @@
   "name": "indiyan-payments",
   "version": "1.0.0",
   "private": true,
-  "description": "Indiyan Payments — retailer, distributor and admin payments portal (Next.js).",
+  "description": "Indiyana Payments — retailer, distributor and admin payments portal (Next.js).",
   "engines": {
     "node": ">=20.9.0"
   },

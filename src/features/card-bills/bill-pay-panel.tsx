@@ -232,7 +232,7 @@ export function BillPayPanel({
         {notice && <Alert tone="danger">{notice}</Alert>}
         {confirming && canPay && (
           <Alert tone="warning">
-            {rupees(amount)} will be paid from your Indiyan Payments wallet to {biller.billerName} •••• {cardDigits}.
+            {rupees(amount)} will be paid from your Indiyana Payments wallet to {biller.billerName} •••• {cardDigits}.
           </Alert>
         )}
 

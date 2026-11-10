@@ -1,4 +1,4 @@
-# Indiyan Payments
+# Indiyana Payments
 
 The payments counter for retailers, distributors and admins: card collections through payment-gateway links, static UPI QR, IMPS payouts, credit card bill payments, wallet ledgers and client-wide reports.
 

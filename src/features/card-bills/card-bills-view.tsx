@@ -240,7 +240,7 @@ export function CardBillsView() {
       )}
 
       <p className="mt-6 flex items-center justify-center gap-1.5 text-[12.5px] text-slate-500">
-        <ShieldCheck className="size-4 text-jade-600" /> Bill payments through Bharat BillPay, secured by Indiyan Payments
+        <ShieldCheck className="size-4 text-jade-600" /> Bill payments through Bharat BillPay, secured by Indiyana Payments
       </p>
 
       <Dialog open={hdfcAlert} onClose={() => setHdfcAlert(false)} size="sm" hideClose>
