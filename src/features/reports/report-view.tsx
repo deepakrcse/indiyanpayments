@@ -149,7 +149,75 @@ export function ReportView({ reportKey }: { reportKey: string }) {
     }
   };
 
-  const table = (list: Row[]) => (
+  // The row's own actions — receipt, refund, bank re-check — shared by the table and the phone cards.
+  const receiptButtons = (r: Row) => (
+    <div className="inline-flex gap-0.5">
+      {(
+        [
+          ['print', Printer, 'Print receipt'],
+          ['download', Download, 'Download receipt'],
+          ['share', Share2, 'Share receipt'],
+        ] as const
+      ).map(([kind, Icon, label]) => (
+        <button key={kind} type="button" onClick={() => doReceipt(kind, r)} aria-label={label} title={label} className="rounded-lg p-1.5 text-slate-400 hover:bg-brand-50 hover:text-brand-600">
+          <Icon className="size-4" />
+        </button>
+      ))}
+    </div>
+  );
+  const refundMenu = (r: Row) => (
+    <RowMenu label={`More actions for #${String(r.id)}`} actions={[{ label: 'Refund', icon: Undo2, danger: true, onSelect: () => setRefundRow(r as unknown as AdminImpsRow) }]} />
+  );
+  const recheckButton = (r: Row) =>
+    def.pending!.isPending(r) ? <RefreshButton onRefresh={() => recheck(r)} title="Check this payment with the bank" variant="gold" /> : null;
+  const cellOf = (c: (typeof screenCols)[number], r: Row) => (c.cell ? c.cell(r) : (c.value(r) ?? '—'));
+
+  // Phones: one card per row, no sideways scrolling. ID and status head the card, the time sits
+  // under them, every other column follows as label and value, two to a line; actions at the foot.
+  const idCol = screenCols.find((c) => c.header === 'ID');
+  const statusCol = screenCols.find((c) => c.header === 'Status');
+  const timeCol = screenCols.find((c) => c.header === 'Time' || c.header === 'Date');
+  const restCols = screenCols.filter((c) => c !== idCol && c !== statusCol && c !== timeCol);
+  const cards = (list: Row[]) => (
+    <ul className="space-y-3 bg-slate-50/70 p-3 md:hidden">
+      {list.map((r, i) => {
+        const pendingHere = showRefresh && def.pending!.isPending(r);
+        const hasActions = Boolean(def.receipt || def.refundable || pendingHere);
+        return (
+          <li key={def.rowKey(r, i)} className="rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_14px_-10px_rgb(15_23_42/0.3)]">
+            {(idCol || statusCol || timeCol) && (
+              <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 pt-3 pb-2.5">
+                <div className="min-w-0">
+                  {idCol && <div className="text-[14px]">{cellOf(idCol, r)}</div>}
+                  {timeCol && <div className="mt-0.5 text-[12px] text-slate-500">{cellOf(timeCol, r)}</div>}
+                </div>
+                {statusCol && <div className="shrink-0">{cellOf(statusCol, r)}</div>}
+              </div>
+            )}
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3">
+              {restCols.map((c) => (
+                <div key={c.header} className="min-w-0">
+                  <dt className="text-[10.5px] font-bold tracking-wider text-slate-400 uppercase">{c.header}</dt>
+                  <dd className="mt-0.5 text-[13px] text-slate-700 [overflow-wrap:anywhere] [&_*]:whitespace-normal">{cellOf(c, r)}</dd>
+                </div>
+              ))}
+            </dl>
+            {hasActions && (
+              <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-2.5 py-1.5">
+                <div>{def.receipt && receiptButtons(r)}</div>
+                <div className="flex items-center gap-1">
+                  {pendingHere && recheckButton(r)}
+                  {def.refundable && refundMenu(r)}
+                </div>
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  const wideTable = (list: Row[]) => (
     <Table maxHeight="calc(100dvh - 340px)">
       <THead>
         <tr>
@@ -168,42 +236,24 @@ export function ReportView({ reportKey }: { reportKey: string }) {
           <TR key={def.rowKey(r, i)}>
             {screenCols.map((c) => (
               <TD key={c.header} align={c.align} className="whitespace-nowrap">
-                {c.cell ? c.cell(r) : (c.value(r) ?? '—')}
+                {cellOf(c, r)}
               </TD>
             ))}
-            {def.receipt && (
-              <TD align="right">
-                <div className="inline-flex gap-0.5">
-                  {(
-                    [
-                      ['print', Printer, 'Print receipt'],
-                      ['download', Download, 'Download receipt'],
-                      ['share', Share2, 'Share receipt'],
-                    ] as const
-                  ).map(([kind, Icon, label]) => (
-                    <button key={kind} type="button" onClick={() => doReceipt(kind, r)} aria-label={label} title={label} className="rounded-lg p-1.5 text-slate-400 hover:bg-brand-50 hover:text-brand-600">
-                      <Icon className="size-4" />
-                    </button>
-                  ))}
-                </div>
-              </TD>
-            )}
-            {def.refundable && (
-              <TD align="right">
-                <RowMenu label={`More actions for #${String(r.id)}`} actions={[{ label: 'Refund', icon: Undo2, danger: true, onSelect: () => setRefundRow(r as unknown as AdminImpsRow) }]} />
-              </TD>
-            )}
-            {showRefresh && (
-              <TD align="center">
-                {def.pending!.isPending(r) && (
-                  <RefreshButton onRefresh={() => recheck(r)} title="Check this payment with the bank" variant="gold" />
-                )}
-              </TD>
-            )}
+            {def.receipt && <TD align="right">{receiptButtons(r)}</TD>}
+            {def.refundable && <TD align="right">{refundMenu(r)}</TD>}
+            {showRefresh && <TD align="center">{recheckButton(r)}</TD>}
           </TR>
         ))}
       </tbody>
     </Table>
+  );
+
+  // Cards on a phone, the table from a tablet up.
+  const table = (list: Row[]) => (
+    <>
+      {cards(list)}
+      <div className="max-md:hidden">{wideTable(list)}</div>
+    </>
   );
 
   return (
