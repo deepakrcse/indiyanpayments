@@ -18,7 +18,5 @@ export const routes = {
   editCustomer: (id: number) => `/admin/customers/${id}/edit`,
   mapping: (id: number) => `/admin/customers/${id}/mapping`,
   pgSettings: '/admin/pg-settings',
-  qrCodes: '/admin/qr-codes',
-  qrRequests: '/admin/qr-requests',
   announcements: '/admin/announcements',
 } as const;

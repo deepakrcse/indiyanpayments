@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ComponentType } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { LayoutDashboard, QrCode, Settings, X } from 'lucide-react';
+import { LayoutDashboard, Settings, X } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { qk } from '@/lib/api/query-keys';
 import { cn } from '@/lib/cn';
@@ -172,8 +172,7 @@ function DashboardPanel({ onClose }: { onClose: () => void }) {
 
 /**
  * Admin — TamilPay's admin page in this portal's design:
- *   Overview & Reports  Dashboard (opens the panel) · Admin Ledger · Admin IMPS · Admin PG · Admin QR · Customer Business
- *   QR                  QR · QR Requests
+ *   Overview & Reports  Dashboard (opens the panel) · Admin Ledger · Admin IMPS · Admin PG · Customer Business
  *   Manage              Customers · PG Settings · Announcements · Distributors
  * (Customers and PG Settings were in TamilPay's admin sidebar; this portal has no sidebar, so
  * they live here.) On a desktop the page is one screen tall:
@@ -200,18 +199,7 @@ export function AdminConsole() {
       { label: 'Admin Ledger Report', description: "Any retailer's wallet ledger over a date range", mark: icon3d('ledger'), href: routes.report('admin-ledger') },
       { label: 'Admin IMPS Report', description: "Every retailer's IMPS transfers, client-wide", mark: brand('imps.svg'), href: routes.report('admin-imps') },
       { label: 'Admin PG Report', description: "Every retailer's PG links, client-wide", mark: icon3d('card'), href: routes.report('admin-pg') },
-      { label: 'Admin QR Report', description: "Every retailer's QR collect requests, client-wide", mark: brand('upi.svg'), href: routes.report('admin-qr') },
       { label: 'Customer Business', description: 'Day-wise PG, IMPS and card-bill business of every customer', mark: icon3d('office'), href: routes.report('customer-business') },
-    ],
-  };
-  const qr: Group = {
-    key: 'qr',
-    title: 'QR',
-    caption: 'Static QR codes and the requests made against them',
-    icon: QrCode,
-    tools: [
-      { label: 'QR', description: 'Create and manage static QR codes', mark: icon3d('phone'), href: routes.qrCodes },
-      { label: 'QR Requests', description: 'Approve or reject collect requests', mark: icon3d('inbox'), href: routes.qrRequests },
     ],
   };
   const manage: Group = {
@@ -229,14 +217,11 @@ export function AdminConsole() {
 
   return (
     <div className="flex flex-col gap-4 xl:h-[calc(100dvh-var(--chrome-h))]">
-      <PageHeader title="Admin" description="Reports, QR codes and the tools that run Indiyana Payments" back={routes.home} className="mb-0" />
+      <PageHeader title="Admin" description="Reports, customers and the tools that run Indiyana Payments" back={routes.home} className="mb-0" />
 
       <div className={cn('grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-2', dashOpen && 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(22.5rem,0.95fr)]')}>
         <GroupCard group={overview} />
-        <div className="flex min-h-0 flex-col gap-4">
-          <GroupCard group={qr} className="shrink-0" />
-          <GroupCard group={manage} className="xl:flex-1" />
-        </div>
+        <GroupCard group={manage} />
         {dashOpen && (
           <div ref={panelRef} className="flex min-h-0 scroll-mt-24 flex-col lg:col-span-2 lg:max-xl:max-h-[36rem] xl:col-span-1">
             <DashboardPanel onClose={() => setDashOpen(false)} />

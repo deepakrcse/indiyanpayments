@@ -1,15 +1,13 @@
-import { ArrowLeftRight, BookOpen, CreditCard, QrCode, Receipt, Users, WalletCards } from 'lucide-react';
+import { ArrowLeftRight, BookOpen, CreditCard, Receipt, Users, WalletCards } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { cn } from '@/lib/cn';
 import { dateTime, dayMonthYear, rupees } from '@/lib/format';
 import { StatusBadge } from '@/components/ui/badge';
 import { Stacked } from '@/components/ui/table';
-import { qrRemarkParts, qrRemarkText } from '@/features/qr/remarks';
 import type { AdminImpsRow, CustomerBusinessRow } from '@/types/admin';
 import type { CardBillPayment } from '@/types/bbps';
 import type { ImpsTransfer } from '@/types/imps';
 import type { PgTransfer } from '@/types/pg';
-import type { QrRequest } from '@/types/qr';
 import type { LedgerEntry } from '@/types/wallet';
 import type { ReportColumn, ReportDefinition } from './types';
 
@@ -192,45 +190,6 @@ const cardBills = (isAdmin: boolean): ReportDefinition<CardBillPayment> => ({
   }),
 });
 
-// ── QR collect requests ───────────────────────────────────────────────────
-const remarksCol: ReportColumn<QrRequest> = {
-  header: 'Remarks',
-  value: (r) => qrRemarkText(r),
-  cell: (r) => {
-    const { note, reason } = qrRemarkParts(r);
-    if (!note && !reason) return '—';
-    return (
-      <div className="max-w-64 text-[12.5px] whitespace-normal">
-        {note && <div>{note}</div>}
-        {reason && <div className="text-rose-600">Rejected: {reason}</div>}
-      </div>
-    );
-  },
-  width: 1.5,
-};
-
-const qr: ReportDefinition<QrRequest> = {
-  key: 'qr',
-  label: 'QR collections',
-  description: 'Collect requests filed against your QR codes',
-  icon: QrCode,
-  parent: 'reports',
-  fetch: (p) => api.get('/api/qr/requests', { walletId: p.walletId }),
-  clientDateFilter: (r) => r.createdTime,
-  rowKey: (r, i) => r.id ?? i,
-  columns: [
-    idCol((r) => r.id),
-    timeCol((r) => r.createdTime),
-    { header: 'Retailer', value: (r) => r.retailerName ?? '', cell: (r) => <Stacked primary={r.retailerName} secondary={r.username} />, width: 1.1 },
-    { header: 'Retailer mobile', value: (r) => r.username ?? '', only: 'export', width: 1 },
-    { header: 'QR', value: (r) => r.qrName ?? '', cell: (r) => <Stacked primary={r.qrName} secondary={r.vpa} />, width: 1.2 },
-    remarksCol,
-    amountCol('Amount', (r) => r.amount, true),
-    { header: 'UTR', value: (r) => r.utr ?? '', cell: (r) => <span className="font-mono text-[12px]">{r.utr || '—'}</span>, width: 1 },
-    statusCol((r) => r.status),
-  ],
-};
-
 // ── Admin reports ─────────────────────────────────────────────────────────
 const adminLedger: ReportDefinition<LedgerEntry> = {
   ...ledger,
@@ -282,35 +241,6 @@ const adminPg: ReportDefinition<PgTransfer> = {
   pending: pgPending,
 };
 
-const adminQr: ReportDefinition<QrRequest> = {
-  key: 'admin-qr',
-  label: 'All QR collections',
-  description: "Every retailer's QR collect requests, client-wide",
-  icon: QrCode,
-  adminOnly: true,
-  parent: 'admin',
-  fetch: () => api.get('/api/qr/requests', { scope: 'all' }),
-  clientDateFilter: (r) => r.createdTime,
-  rowKey: (r, i) => r.id ?? i,
-  columns: [
-    idCol((r) => r.id),
-    timeCol((r) => r.createdTime),
-    { header: 'Retailer', value: (r) => r.retailerName ?? '', cell: (r) => <Stacked primary={r.retailerName} secondary={r.username} />, width: 1 },
-    { header: 'Retailer mobile', value: (r) => r.username ?? '', only: 'export', width: 0.95 },
-    { header: 'Shop', value: (r) => r.storeName ?? '', width: 1.1 },
-    { header: 'QR', value: (r) => r.qrName ?? '', cell: (r) => <Stacked primary={r.qrName} secondary={r.vpa} />, width: 1.1 },
-    { header: 'VPA', value: (r) => r.vpa ?? '', only: 'export', width: 1.4 },
-    amountCol('Amount', (r) => r.amount, true),
-    amountCol('Charges', (r) => r.charges),
-    amountCol('Credit amount', (r) => r.creditAmount),
-    { header: 'UTR', value: (r) => r.utr ?? '', cell: (r) => <span className="font-mono text-[12px]">{r.utr || '—'}</span>, width: 0.8 },
-    statusCol((r) => r.status),
-    { header: 'Approved', value: (r) => (r.approvedTime ? dateTime(r.approvedTime) : ''), cell: (r) => (r.approvedTime ? dateTime(r.approvedTime) : '—'), width: 1.3 },
-    amountCol('Closing balance', (r) => r.walletClosingBalance),
-    remarksCol,
-  ],
-};
-
 const hasPg = (r: CustomerBusinessRow) => r.pgCount > 0;
 
 const customerBusiness: ReportDefinition<CustomerBusinessRow> = {
@@ -340,9 +270,9 @@ const customerBusiness: ReportDefinition<CustomerBusinessRow> = {
 
 /** Every report, keyed by its URL slug. Margin columns exist only in the admin's build. */
 export function buildReports(isAdmin: boolean): Record<string, ReportDefinition<never>> {
-  const all = [transfers, pgReport(isAdmin), cardBills(isAdmin), ledger, qr, adminLedger, adminImps, adminPg, adminQr, customerBusiness];
+  const all = [transfers, pgReport(isAdmin), cardBills(isAdmin), ledger, adminLedger, adminImps, adminPg, customerBusiness];
   return Object.fromEntries(all.filter((r) => isAdmin || !r.adminOnly).map((r) => [r.key, r as unknown as ReportDefinition<never>]));
 }
 
-export const RETAILER_REPORT_KEYS = ['transfers', 'pg', 'card-bills', 'ledger', 'qr'] as const;
+export const RETAILER_REPORT_KEYS = ['transfers', 'pg', 'card-bills', 'ledger'] as const;
 export const ADMIN_REPORT_KEYS = ['admin-ledger', 'admin-imps', 'admin-pg', 'admin-qr', 'customer-business'] as const;

@@ -41,8 +41,6 @@ const nextConfig: NextConfig = {
       ['/card-payments', '/payout/card-bills'],
       ['/transactions', '/reports/transfers'],
       ['/settings', '/admin/pg-settings'],
-      ['/qr-codes', '/admin/qr-codes'],
-      ['/qr-requests', '/admin/qr-requests'],
       ['/announcements', '/admin/announcements'],
       ['/customers', '/admin/customers'],
       ['/customers/:path*', '/admin/customers/:path*'],
