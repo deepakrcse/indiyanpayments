@@ -1,0 +1,172 @@
+@import 'tailwindcss';
+/* The class list, generated from src/ — see scripts/tailwind-classes.mjs. */
+@import './tailwind-sources.css';
+
+/* ───────────────────────────── Design tokens ───────────────────────────── */
+@theme {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-manrope), var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Indiyan navy — the logo's blue (#022C71 is brand-700). */
+  --color-brand-50: #eef3fc;
+  --color-brand-100: #dce6f9;
+  --color-brand-200: #b9ccf1;
+  --color-brand-300: #8ba9e4;
+  --color-brand-400: #5880d2;
+  --color-brand-500: #2f5bbf;
+  --color-brand-600: #0e3d9e;
+  --color-brand-700: #022c71;
+  --color-brand-800: #03245c;
+  --color-brand-900: #041c48;
+  --color-brand-950: #03132f;
+
+  /* Deep navy ink — headings and the dark panels. */
+  --color-ink-950: #050b1f;
+  --color-ink-900: #0a1430;
+  --color-ink-800: #111f47;
+  --color-ink-700: #1c2d5c;
+  --color-ink-600: #2e4174;
+
+  /* Indiyan gold — the logo's "Payments" (#B77F37 is gold-500); also attention and pending. */
+  --color-gold-50: #fbf6ee;
+  --color-gold-100: #f4e7d2;
+  --color-gold-200: #ead2a9;
+  --color-gold-300: #deb97f;
+  --color-gold-400: #d4a35c;
+  --color-gold-500: #b77f37;
+  --color-gold-600: #96672a;
+  --color-gold-700: #77511f;
+  --color-gold-800: #5c3f19;
+
+  /* Jade — money in, success. */
+  --color-jade-50: #ecfdf5;
+  --color-jade-100: #d1fae5;
+  --color-jade-500: #10b981;
+  --color-jade-600: #059669;
+  --color-jade-700: #047857;
+
+  --color-canvas: #f5f7fb;
+
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
+
+  --shadow-card: 0 1px 2px rgb(10 20 48 / 0.04), 0 4px 16px -4px rgb(10 20 48 / 0.07);
+  --shadow-lift: 0 2px 4px rgb(10 20 48 / 0.05), 0 18px 40px -12px rgb(2 44 113 / 0.25);
+  --shadow-pop: 0 24px 64px -16px rgb(5 11 31 / 0.35);
+
+  --animate-fade-in: fade-in 0.25s ease-out both;
+  --animate-rise: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop: pop 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-drift: drift 14s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-ping-slow: ping-slow 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-refresh-spin: refresh-spin 0.7s linear infinite;
+  --animate-shake: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(4%, -6%, 0) scale(1.08); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes ping-slow {
+    75%, 100% { transform: scale(2.2); opacity: 0; }
+  }
+  @keyframes refresh-spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes shake {
+    20%, 60% { transform: translateX(-2px); }
+    40%, 80% { transform: translateX(2px); }
+  }
+}
+
+/* ───────────────────────────── Base ───────────────────────────── */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink-900 antialiased;
+  }
+  /* Headings everywhere speak in the display face; the body stays in Geist. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+  ::selection {
+    @apply bg-brand-200 text-ink-950;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+/* ───────────────────────────── Utilities ───────────────────────────── */
+/* The chevron on native selects. */
+@utility select-chevron {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath d='M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'/%3E%3C/svg%3E");
+  background-size: 18px;
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+}
+
+/* Money and counts: the display face's tabular figures, so columns of amounts line up. */
+@utility tabular {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(139 169 228 / 0.6) transparent;
+}
+
+/* A faint dotted grid behind the portal canvas. */
+@utility canvas-grid {
+  background-image: radial-gradient(rgb(2 44 113 / 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+@utility skeleton {
+  background: linear-gradient(90deg, rgb(226 228 240) 25%, rgb(240 241 248) 50%, rgb(226 228 240) 75%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* The brand's deep gradient: navy, lit by a touch of gold. */
+@utility bg-aurora {
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgb(183 127 55 / 0.38) 0%, transparent 55%),
+    radial-gradient(90% 70% at 0% 100%, rgb(47 91 191 / 0.4) 0%, transparent 60%),
+    linear-gradient(135deg, #041c48 0%, #022c71 55%, #0e3d9e 100%);
+}
