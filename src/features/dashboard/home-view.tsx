@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowDownToLine, ArrowUpFromLine, CalendarDays, History, LayoutGrid, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, CalendarDays, History, LayoutGrid, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { count, rupees, rupeesCompact } from '@/lib/format';
 import { features } from '@/config/features';
@@ -12,7 +12,6 @@ import { useSession } from '@/features/auth/session-context';
 import { useDashboardSummary } from './admin-kpis';
 import { DifferenceHistoryDialog } from './difference-history-dialog';
 import { HubCard, type Tile } from './service-hub';
-import { StaticQrDialog } from './static-qr-dialog';
 
 const icon = (name: string) => `/services/${name}.png`;
 const logo = (file: string) => `/logos/${file}`;
@@ -63,37 +62,24 @@ function AdminNumbers() {
 }
 
 /**
- * The dashboard — TamilPay's four groups and nothing more:
- *   Pay In        Card PG · Dynamic QR (soon) · Static QR
- *   Pay Out       IMPS · Self Settlement (soon) · Card Payments   (all off when pay-out is switched off)
- *   Verification  Aadhaar · PAN (both soon)
- *   More          Reports · Retailers (distributors) · Admin (admins)
- * Laid out on a five-column grid in tile units: the three-tile groups take three columns on the
- * left, the two-tile groups two on the right, so every tile is the same size and they line up in
- * columns across both rows. Money in and out read down the left; tools down the right.
+ * The dashboard — the services in use:
+ *   Pay In   Card PG
+ *   Pay Out  IMPS · Card Payments   (both off when pay-out is switched off)
+ *   More     Reports · Retailers (distributors) · Admin (admins)
+ * One row, each card as many columns wide as it has tiles, so every tile is the same size.
  * On a desktop it is exactly one screen tall; on small screens the groups stack.
  */
 export function HomeView() {
   const { user, isAdmin, isDistributor } = useSession();
-  const [qrOpen, setQrOpen] = useState(false);
   const [soon, setSoon] = useState<string | null>(null);
 
   const name = (user.fullName || user.username).trim().split(/\s+/)[0];
   const payOutOff = features.payOutDisabled;
 
-  const payIn: Tile[] = [
-    { label: 'Card PG', img: icon('card'), href: routes.gateway },
-    { label: 'Dynamic QR', img: icon('phone-arrow') },
-    { label: 'Static QR', img: logo('upi.svg'), logo: true, onClick: () => setQrOpen(true), off: features.staticQrDisabled },
-  ];
+  const payIn: Tile[] = [{ label: 'Card PG', img: icon('card'), href: routes.gateway }];
   const payOut: Tile[] = [
     { label: 'IMPS', img: logo('imps.svg'), logo: true, href: routes.imps, off: payOutOff },
-    { label: 'Self Settlement', img: icon('coin'), off: payOutOff },
     { label: 'Card Payments', img: logo('bharat-billpay.svg'), logo: true, href: routes.cardBills, off: payOutOff, instant: true },
-  ];
-  const verification: Tile[] = [
-    { label: 'Aadhaar Verification', img: icon('bust') },
-    { label: 'PAN Verification', img: icon('id-card') },
   ];
   const more: Tile[] = [
     { label: 'Reports', img: icon('bar-chart'), href: routes.reports },
@@ -102,9 +88,10 @@ export function HomeView() {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-5 xl:h-[calc(100dvh-var(--chrome-h))] xl:grid-rows-[auto_minmax(0,1fr)_minmax(0,1fr)]">
+    // Columns in tile units: Pay In 1 + Pay Out 2 + More (1 or 2).
+    <div className={cn('grid grid-cols-1 gap-4 xl:h-[calc(100dvh-var(--chrome-h))] xl:grid-rows-[auto_minmax(0,1fr)]', more.length > 1 ? 'lg:grid-cols-5' : 'lg:grid-cols-4')}>
       {/* ── Greeting: name, store and today's date; for admins, the business numbers ── */}
-      <section className="bg-aurora relative flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-3xl px-6 py-4 text-white shadow-lift md:col-span-5">
+      <section className="bg-aurora relative flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-3xl px-6 py-4 text-white shadow-lift lg:col-span-full">
         <div className="pointer-events-none absolute -top-20 right-1/3 size-56 animate-drift rounded-full bg-gold-500/20 blur-3xl" aria-hidden />
         <div className="relative min-w-0">
           <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
@@ -125,12 +112,10 @@ export function HomeView() {
         )}
       </section>
 
-      <HubCard title="Pay In" caption="Accept payments from your customers" icon={ArrowDownToLine} accent="navy" tiles={payIn} onSoon={setSoon} className="md:col-span-3" />
-      <HubCard title="Verification" caption="Verify customer identity" icon={ShieldCheck} accent="gold" tiles={verification} onSoon={setSoon} className="md:col-span-2" />
-      <HubCard title="Pay Out" caption="Send money and settle balances" icon={ArrowUpFromLine} accent="bronze" tiles={payOut} disabled={payOutOff} onSoon={setSoon} className="md:col-span-3" />
-      <HubCard title="More" caption="Manage and monitor" icon={LayoutGrid} accent="royal" tiles={more} onSoon={setSoon} className="md:col-span-2" />
+      <HubCard title="Pay In" caption="Accept payments from your customers" icon={ArrowDownToLine} accent="navy" tiles={payIn} onSoon={setSoon} className="lg:col-span-1" />
+      <HubCard title="Pay Out" caption="Send money to bank accounts and pay card bills" icon={ArrowUpFromLine} accent="bronze" tiles={payOut} disabled={payOutOff} onSoon={setSoon} className="lg:col-span-2" />
+      <HubCard title="More" caption="Manage and monitor" icon={LayoutGrid} accent="royal" tiles={more} onSoon={setSoon} className={more.length > 1 ? 'lg:col-span-2' : 'lg:col-span-1'} />
 
-      <StaticQrDialog open={qrOpen} onClose={() => setQrOpen(false)} />
       <Dialog open={Boolean(soon)} onClose={() => setSoon(null)} title={soon ?? ''} size="sm" icon={<Sparkles />}>
         <p className="text-[13.5px] leading-relaxed text-slate-600">This service isn&apos;t live yet — there&apos;s no provider connected for it. It&apos;s listed so the full catalogue is visible.</p>
         <Button block className="mt-5" onClick={() => setSoon(null)}>

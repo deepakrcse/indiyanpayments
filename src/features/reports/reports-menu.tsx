@@ -15,7 +15,6 @@ const MARKS: Record<(typeof RETAILER_REPORT_KEYS)[number], { src: string; logo?:
   pg: { src: '/services/card.png' },
   'card-bills': { src: '/logos/bharat-billpay.svg', logo: true },
   ledger: { src: '/services/ledger.png' },
-  qr: { src: '/logos/upi.svg', logo: true },
 };
 
 const EXPORTS = (
@@ -30,7 +29,7 @@ const EXPORTS = (
 );
 
 /**
- * The five reports, as on TamilPay — the same list for every role. (The admin's client-wide
+ * The reports — the same list for every role. (The admin's client-wide
  * reports live on the Admin page, exactly where TamilPay kept them.) Built from the same pieces
  * as Admin: one card, the shared section heading, and an action row per report.
  */
@@ -54,7 +53,7 @@ export function ReportsMenu() {
                 mark={MARKS[key]}
                 meta={EXPORTS}
                 href={routes.report(key)}
-                className={cn('h-full', i === RETAILER_REPORT_KEYS.length - 1 && 'lg:col-span-2')}
+                className={cn('h-full', RETAILER_REPORT_KEYS.length % 2 === 1 && i === RETAILER_REPORT_KEYS.length - 1 && 'lg:col-span-2')}
               />
             );
           })}

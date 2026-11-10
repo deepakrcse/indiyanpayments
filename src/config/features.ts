@@ -8,6 +8,4 @@ const on = (value: string | undefined, fallback: boolean) => (value === undefine
 export const features = {
   /** IMPS and credit card bill payments. */
   payOutDisabled: on(process.env.NEXT_PUBLIC_PAY_OUT_DISABLED, false),
-  /** The Static QR tile on Home. Admin QR screens and QR reports are untouched. */
-  staticQrDisabled: on(process.env.NEXT_PUBLIC_STATIC_QR_DISABLED, false),
 } as const;

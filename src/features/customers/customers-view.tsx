@@ -17,7 +17,6 @@ import {
   Network,
   Pencil,
   Plus,
-  QrCode,
   Receipt,
   Trash2,
   UserCheck,
@@ -60,7 +59,6 @@ const CUSTOMER_REPORTS = [
   { key: 'pg', label: 'Card collections', icon: CreditCard },
   { key: 'card-bills', label: 'Credit card bills', icon: WalletCards },
   { key: 'ledger', label: 'Wallet ledger', icon: BookOpen },
-  { key: 'qr', label: 'QR collections', icon: QrCode },
 ];
 
 function PayoutCell({ customer }: { customer: CustomerWithWallet }) {
