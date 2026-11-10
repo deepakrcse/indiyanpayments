@@ -15,7 +15,7 @@ import { Field, Input, Select } from '@/components/ui/field';
 import type { StaticQr } from '@/types/qr';
 
 /** The standard UPI deep link every UPI app reads. No amount: a static QR is reusable. */
-const upiUri = (vpa: string, payee: string | null) => `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(payee || 'Indiyan Payments')}&cu=INR`;
+const upiUri = (vpa: string, payee: string | null) => `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(payee || 'Indiyana Payments')}&cu=INR`;
 
 /**
  * Home › Static QR: pulls the next QR from the pool and draws it from its VPA. After the customer

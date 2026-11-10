@@ -1,6 +1,7 @@
 import type { jsPDF as JsPdf } from 'jspdf';
 import { compactDateTime } from '@/lib/format';
 import { imageAsDataUrl } from './download';
+import pdfLogoArt from '@/assets/brand/indiyana-logo-pdf.png';
 
 /** Who the document is from — the store's letterhead. */
 export interface Letterhead {
@@ -29,7 +30,7 @@ export function statusColor(status: string): RGB {
 
 // A small copy of the logo (the full-size artwork would bloat every PDF).
 let logoCache: Promise<string | null> | null = null;
-const brandLogo = () => (logoCache ??= imageAsDataUrl('/brand/indiyan-logo-pdf.png'));
+const brandLogo = () => (logoCache ??= imageAsDataUrl(pdfLogoArt.src));
 
 async function newDoc(orientation: 'portrait' | 'landscape' = 'portrait'): Promise<JsPdf> {
   const { jsPDF } = await import('jspdf');
@@ -37,7 +38,7 @@ async function newDoc(orientation: 'portrait' | 'landscape' = 'portrait'): Promi
 }
 
 /**
- * The band across the top: the store's name, address and contact on the left, the Indiyan Payments
+ * The band across the top: the store's name, address and contact on the left, the Indiyana Payments
  * logo on the right, and a navy-to-gold rule beneath. Returns the y below it.
  */
 async function drawLetterhead(doc: JsPdf, head: Letterhead, left: number, right: number, top: number): Promise<number> {
@@ -54,7 +55,7 @@ async function drawLetterhead(doc: JsPdf, head: Letterhead, left: number, right:
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
   doc.setTextColor(...NAVY);
-  doc.text(doc.splitTextToSize(head.storeName || 'Indiyan Payments', textRight - left)[0] ?? '', left, top + 26);
+  doc.text(doc.splitTextToSize(head.storeName || 'Indiyana Payments', textRight - left)[0] ?? '', left, top + 26);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...MUTED);
@@ -230,7 +231,7 @@ export async function buildTableReport(opts: {
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
     doc.text(`Page ${p} of ${pages}`, right, pageH - 20, { align: 'right' });
-    doc.text(`Generated ${new Date().toLocaleString('en-IN')} · Indiyan Payments`, left, pageH - 20);
+    doc.text(`Generated ${new Date().toLocaleString('en-IN')} · Indiyana Payments`, left, pageH - 20);
   }
   return doc;
 }

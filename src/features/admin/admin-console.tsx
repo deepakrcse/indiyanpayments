@@ -229,7 +229,7 @@ export function AdminConsole() {
 
   return (
     <div className="flex flex-col gap-4 xl:h-[calc(100dvh-var(--chrome-h))]">
-      <PageHeader title="Admin" description="Reports, QR codes and the tools that run Indiyan Payments" back={routes.home} className="mb-0" />
+      <PageHeader title="Admin" description="Reports, QR codes and the tools that run Indiyana Payments" back={routes.home} className="mb-0" />
 
       <div className={cn('grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-2', dashOpen && 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(22.5rem,0.95fr)]')}>
         <GroupCard group={overview} />

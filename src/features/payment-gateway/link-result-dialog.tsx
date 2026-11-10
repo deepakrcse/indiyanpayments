@@ -24,7 +24,7 @@ export function LinkResultDialog({ link, onClose }: { link: PaymentLink | null; 
   const share = async () => {
     if (!link) return;
     if (navigator.share) {
-      await navigator.share({ title: 'Indiyan Payments — payment link', url: link.pgLink }).catch(() => {});
+      await navigator.share({ title: 'Indiyana Payments — payment link', url: link.pgLink }).catch(() => {});
     } else {
       await copy();
     }

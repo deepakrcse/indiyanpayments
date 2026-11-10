@@ -14,14 +14,14 @@ export default async function PaymentStatusPage({ searchParams }: { searchParams
   return (
     <div className="canvas-grid flex min-h-dvh flex-col">
       <header className="flex h-18 items-center border-b border-slate-200/70 bg-white/80 px-6 backdrop-blur">
-        <Link href={routes.home} aria-label="Indiyan Payments">
+        <Link href={routes.home} aria-label="Indiyana Payments">
           <BrandLogo height={46} priority />
         </Link>
       </header>
       <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-10">
         <PaymentStatusCard key={JSON.stringify(params)} params={params} />
         <p className="flex items-center gap-1.5 text-[12.5px] text-slate-500">
-          <ShieldCheck className="size-4 text-jade-600" /> Secured by Indiyan Payments ·{' '}
+          <ShieldCheck className="size-4 text-jade-600" /> Secured by Indiyana Payments ·{' '}
           <Link href={routes.wallet} className="font-semibold text-brand-600 hover:text-brand-800">
             Go to wallet ledger
           </Link>

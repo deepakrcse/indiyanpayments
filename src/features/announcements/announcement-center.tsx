@@ -89,7 +89,7 @@ export function AnnouncementCenter({ children }: { children: ReactNode }) {
               </span>
               <h2 className="mt-4 text-xl font-extrabold">What&apos;s new</h2>
               <p className="mt-1 text-sm text-brand-100">
-                {popup.length === 1 ? '1 update' : `${popup.length} updates`} from Indiyan Payments
+                {popup.length === 1 ? '1 update' : `${popup.length} updates`} from Indiyana Payments
               </p>
             </div>
             <ol className="scrollbar-thin max-h-[50vh] space-y-3 overflow-y-auto px-6 py-5">
