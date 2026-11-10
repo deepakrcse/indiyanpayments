@@ -37,6 +37,13 @@ export function compactDateTime(iso: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
+/** "10 Nov 2026" — the date half of `dateTime`. */
+export function dateOnly(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export function timeOnly(iso: string | null | undefined): string {
   if (!iso) return '—';
   const d = new Date(iso);
