@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Clock3, CreditCard, Wallet, WalletCards, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock3, CreditCard, Search, SearchX, Wallet, WalletCards, XCircle } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { features } from '@/config/features';
 import { routes } from '@/config/routes';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/field';
+import { LAST_REFERENCE_KEY } from './saved-payers';
 import { OUTCOME_TITLES, statusRows, usePaymentStatus } from './use-payment-status';
 
 const REDIRECT_SECONDS = 10;
@@ -28,7 +30,23 @@ const TONES = { success: 'bg-jade-50 text-jade-600', failed: 'bg-rose-50 text-ro
  */
 export function PaymentResultDialog({ token, onSuccess, onDone }: { token: string; onSuccess: () => void; onDone: () => void }) {
   const router = useRouter();
-  const status = usePaymentStatus({ token });
+  // If the return link cannot be matched, the payment can still be checked by its reference —
+  // pre-filled with the last one created in this browser (the counter usually makes the link).
+  const [reference, setReference] = useState<string | null>(null);
+  const [typed, setTyped] = useState(() => {
+    try {
+      return typeof window === 'undefined' ? '' : (localStorage.getItem(LAST_REFERENCE_KEY) ?? '');
+    } catch {
+      return '';
+    }
+  });
+  const status = usePaymentStatus(reference ? { reference } : { token });
+  const lookupFailed = status.isError;
+  const checkByReference = (e: FormEvent) => {
+    e.preventDefault();
+    const ref = typed.trim();
+    if (ref) setReference(ref);
+  };
   const [open, setOpen] = useState(true);
   const [counting, setCounting] = useState(true);
   const [seconds, setSeconds] = useState(REDIRECT_SECONDS);
@@ -62,17 +80,33 @@ export function PaymentResultDialog({ token, onSuccess, onDone }: { token: strin
     onDone();
   };
 
-  const Icon = outcome ? ICONS[outcome] : Clock3;
+  const Icon = outcome ? ICONS[outcome] : lookupFailed ? SearchX : Clock3;
   const rows = statusRows(status.data, true);
 
   return (
     <Dialog open={open} onClose={close} size="sm" hideClose>
       <div className="text-center">
-        <span className={cn('mx-auto mt-2 grid size-16 place-items-center rounded-2xl', outcome ? TONES[outcome] : 'bg-brand-50 text-brand-600')}>
+        <span className={cn('mx-auto mt-2 grid size-16 place-items-center rounded-2xl', outcome ? TONES[outcome] : lookupFailed ? 'bg-gold-50 text-gold-600' : 'bg-brand-50 text-brand-600')}>
           <Icon className={cn('size-8', status.isFetching && !outcome && 'animate-pulse')} />
         </span>
-        <h2 className="mt-4 text-[19px] font-extrabold text-ink-900">{outcome ? OUTCOME_TITLES[outcome] : 'Checking your payment…'}</h2>
+        <h2 className="mt-4 text-[19px] font-extrabold text-ink-900">{outcome ? OUTCOME_TITLES[outcome] : lookupFailed ? "We couldn't find this payment automatically" : 'Checking your payment…'}</h2>
         <p className="mt-1 text-[13px] text-slate-500">{status.isError ? status.error.message : (status.data?.message ?? 'One moment.')}</p>
+
+        {lookupFailed && (
+          <form onSubmit={checkByReference} className="mt-4 flex gap-2 text-left">
+            <Input
+              aria-label="Payment reference number"
+              placeholder="Reference number, e.g. NPPG013620"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              className="font-mono"
+              autoFocus
+            />
+            <Button type="submit" loading={status.isFetching} disabled={!typed.trim()}>
+              <Search className="size-4" /> Check
+            </Button>
+          </form>
+        )}
 
         {rows.length > 0 && (
           <dl className="mt-5 divide-y divide-slate-100 rounded-2xl bg-slate-50 px-4 text-left">
