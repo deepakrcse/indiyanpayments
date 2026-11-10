@@ -1,11 +1,25 @@
 'use client';
 
-import { useEffect, useEffectEvent, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useEffectEvent, useId, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const sizes = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg', xl: 'max-w-2xl', '2xl': 'max-w-4xl', full: 'max-w-6xl' } as const;
+
+const noSubscribe = () => () => {};
+
+/**
+ * False on the server and while the page hydrates, true afterwards. A dialog that is already open
+ * when the page loads (e.g. the payment result) must render nothing until then, exactly like the
+ * server did — otherwise React reports a hydration mismatch.
+ */
+const useHydrated = () =>
+  useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false,
+  );
 
 /**
  * A centred dialog rendered into <body>, so no ancestor's overflow or stacking can clip it.
@@ -38,12 +52,13 @@ export function Dialog({
 }) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const hydrated = useHydrated();
   const onEscape = useEffectEvent(() => {
     if (dismissible) onClose();
   });
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open || !hydrated) return undefined;
     const previous = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onEscape();
@@ -62,9 +77,9 @@ export function Dialog({
       document.body.style.overflow = overflow;
       previous?.focus?.();
     };
-  }, [open]);
+  }, [open, hydrated]);
 
-  if (!open || typeof document === 'undefined') return null;
+  if (!open || !hydrated) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-200 flex items-end justify-center overflow-y-auto p-3 sm:items-center sm:p-6">
