@@ -11,7 +11,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { useSession } from '@/features/auth/session-context';
 import { useDashboardSummary } from './admin-kpis';
 import { DifferenceHistoryDialog } from './difference-history-dialog';
-import { HubCard, type Tile } from './service-hub';
+import { FeatureCard, ServiceCard, type Group, type Tile } from './service-hub';
 
 const icon = (name: string) => `/services/${name}.png`;
 const logo = (file: string) => `/logos/${file}`;
@@ -61,13 +61,21 @@ function AdminNumbers() {
   );
 }
 
+const PAY_IN: Group = { title: 'Pay In', icon: ArrowDownToLine, accent: 'navy' };
+const PAY_OUT: Group = { title: 'Pay Out', icon: ArrowUpFromLine, accent: 'bronze' };
+const MORE: Group = { title: 'More', icon: LayoutGrid, accent: 'royal' };
+
+// Rows of the bento on a desktop, by how many wide cards sit beside the feature card (two a row).
+const ROWS = { 1: 'xl:grid-rows-1', 2: 'xl:grid-rows-2', 3: 'xl:grid-rows-3' } as const;
+const SPAN = { 1: 'xl:row-span-1', 2: 'xl:row-span-2', 3: 'xl:row-span-3' } as const;
+
 /**
- * The dashboard — the services in use:
- *   Pay In   Card PG
+ * The dashboard — the services in use, as a bento:
+ *   Pay In   Card PG — the feature card, as tall as the grid beside it
  *   Pay Out  IMPS · Card Payments   (both off when pay-out is switched off)
  *   More     Reports · Retailers (distributors) · Admin (admins)
- * One row, each card as many columns wide as it has tiles, so every tile is the same size.
- * On a desktop it is exactly one screen tall; on small screens the groups stack.
+ * On a desktop it is exactly one screen tall; on a tablet the feature card runs across the top;
+ * on a phone everything stacks.
  */
 export function HomeView() {
   const { user, isAdmin, isDistributor } = useSession();
@@ -76,15 +84,14 @@ export function HomeView() {
   const name = (user.fullName || user.username).trim().split(/\s+/)[0];
   const payOutOff = features.payOutDisabled;
 
-  const payIn: Tile[] = [
-    {
-      label: 'Card PG',
-      desc: 'Collect card payments straight into your wallet.',
-      points: ['Payment link', 'Live status', 'Saved payers'],
-      img: icon('card'),
-      href: routes.gateway,
-    },
-  ];
+  const cardPg: Tile = {
+    label: 'Card PG',
+    desc: 'Collect card payments from your customers straight into your wallet.',
+    points: ['Payment link', 'Live status', 'Saved payers'],
+    img: icon('card'),
+    href: routes.gateway,
+    cta: 'Collect a payment',
+  };
   const payOut: Tile[] = [
     {
       label: 'IMPS',
@@ -112,12 +119,13 @@ export function HomeView() {
     ...(isAdmin ? [{ label: 'Admin', desc: 'Customers, distributors and platform settings.', points: ['Customers', 'PG settings', 'Admin reports'], img: icon('gear'), href: routes.admin }] : []),
   ];
 
+  const cards = [...payOut.map((tile) => ({ tile, group: PAY_OUT })), ...more.map((tile) => ({ tile, group: MORE }))];
+  const rows = Math.min(Math.max(Math.ceil(cards.length / 2), 1), 3) as 1 | 2 | 3;
+
   return (
-    // Desktop (xl): one row, in tile units — Pay In 1 + Pay Out 2 + More (1 or 2). Tablet / small laptop
-    // (md–lg): Pay In and Pay Out share a row and More takes the next. Phone: one column.
-    <div className={cn('grid grid-cols-1 gap-4 xl:h-[calc(100dvh-var(--chrome-h))] xl:grid-rows-[auto_minmax(0,1fr)]', 'md:grid-cols-3', more.length > 1 ? 'xl:grid-cols-5' : 'xl:grid-cols-4')}>
+    <div className="grid grid-cols-1 gap-4 xl:h-[calc(100dvh-var(--chrome-h))] xl:grid-rows-[auto_minmax(0,1fr)]">
       {/* ── Greeting: name, store and today's date; for admins, the business numbers ── */}
-      <section className="bg-aurora relative flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-3xl px-6 py-4 text-white shadow-lift md:col-span-full">
+      <section className="bg-aurora relative flex flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden rounded-3xl px-6 py-4 text-white shadow-lift">
         <div className="pointer-events-none absolute -top-20 right-1/3 size-56 animate-drift rounded-full bg-gold-500/20 blur-3xl" aria-hidden />
         <div className="relative min-w-0">
           <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
@@ -138,9 +146,14 @@ export function HomeView() {
         )}
       </section>
 
-      <HubCard title="Pay In" caption="Collect payments" icon={ArrowDownToLine} accent="navy" tiles={payIn} onSoon={setSoon} className="md:col-span-1" />
-      <HubCard title="Pay Out" caption="Send money to bank accounts and pay card bills" icon={ArrowUpFromLine} accent="bronze" tiles={payOut} disabled={payOutOff} onSoon={setSoon} className="md:col-span-2" />
-      <HubCard title="More" caption="Manage and monitor" icon={LayoutGrid} accent="royal" tiles={more} onSoon={setSoon} className={cn('md:col-span-full', more.length > 1 ? 'xl:col-span-2' : 'xl:col-span-1')} />
+      {/* ── Services: the feature card on the left, the rest two a row beside it ── */}
+      <div className={cn('grid min-h-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3', ROWS[rows])}>
+        <FeatureCard tile={cardPg} group={PAY_IN} onSoon={setSoon} className={cn('md:col-span-2 xl:col-span-1', SPAN[rows])} />
+        {cards.map(({ tile, group }, i) => (
+          // An odd one out at the end takes the whole row.
+          <ServiceCard key={tile.label} tile={tile} group={group} onSoon={setSoon} className={cn(cards.length % 2 === 1 && i === cards.length - 1 && 'md:col-span-2')} />
+        ))}
+      </div>
 
       <Dialog open={Boolean(soon)} onClose={() => setSoon(null)} title={soon ?? ''} size="sm" icon={<Sparkles />}>
         <p className="text-[13.5px] leading-relaxed text-slate-600">This service isn&apos;t live yet — there&apos;s no provider connected for it. It&apos;s listed so the full catalogue is visible.</p>
